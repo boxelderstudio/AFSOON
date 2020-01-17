@@ -45,7 +45,7 @@ public class Mirror : MonoBehaviour
         }
     }
 
-    // BLOCKER ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////BLOCKER////////////////////////////////////////
     // If player-main Ray hits the Blocker, disable collider and renderer of the player-ins 
     private void OnTriggerStay(Collider other)
     {
@@ -84,8 +84,8 @@ public class Mirror : MonoBehaviour
             // enable the "Player_Movement" out of mirror
             p.gameObject.GetComponent<PlayerMovement>().IsInTheMirror = false;
 
-            // // disable player transfer/deformation
-            // GetComponentInChildren<MirrorTransferZone>().resetPlayer_ = true;
+            // disable player transfer/deformation
+            GetComponentInChildren<TransferZone>().resetPlayer_ = true;
         }
     }
 
