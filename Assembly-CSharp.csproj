@@ -64,10 +64,10 @@
      <Compile Include="Assets\scripts\Mirror.cs" />
      <Compile Include="Assets\scripts\MirrorFlawSizeChanger.cs" />
      <Compile Include="Assets\scripts\MirrorManager.cs" />
-     <Compile Include="Assets\scripts\MirrorTransferZone.cs" />
      <Compile Include="Assets\scripts\MovableObject.cs" />
      <Compile Include="Assets\scripts\PlayerDead.cs" />
      <Compile Include="Assets\scripts\PlayerMovement.cs" />
+     <Compile Include="Assets\scripts\TransferZone.cs" />
      <Compile Include="Assets\scripts-old\cam_effect.cs" />
      <Compile Include="Assets\scripts-old\Camera_Follow.cs" />
      <Compile Include="Assets\scripts-old\Can_Move.cs" />
