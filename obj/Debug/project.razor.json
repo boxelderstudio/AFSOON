@@ -1,0 +1,14 @@
+{
+  "ProjectFilePath": "f:\\unity projects\\AFSOON_unity5.5.6\\Assembly-CSharp-Editor.csproj",
+  "TargetFramework": "v3.5",
+  "TagHelpers": [],
+  "Configuration": {
+    "ConfigurationName": "UnsupportedRazor",
+    "LanguageVersion": "1.0",
+    "Extensions": [
+      {
+        "ExtensionName": "UnsupportedRazorExtension"
+      }
+    ]
+  }
+}
