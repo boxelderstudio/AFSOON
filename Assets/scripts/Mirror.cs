@@ -17,7 +17,7 @@ public class Mirror : MonoBehaviour
             p = other.gameObject;
             Vector3 p_refl_pos;
 
-            p_refl_pos = MirrorManager.Obj_Refl_Pos(mirror_direction_, p);
+            p_refl_pos = MirrorManager.Obj_Refl_Pos(mirror_direction_, p.transform.position);
 
             // instatiate reflected player
             p_ins = GameObject.Instantiate( p.gameObject, p_refl_pos, Quaternion.identity );  

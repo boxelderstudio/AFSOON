@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
+using System;
 
 
 public class mirrorData
@@ -31,6 +33,9 @@ public class MirrorManager : MonoBehaviour
 {
     public static MirrorManager singletone;
     private List<mirrorData> mirrors_;
+    float p_main_velocity = 0;
+    float[] p_ins_velocity = new float[1]; 
+    int minIndex = 0;
 
     private void Awake()
     {
@@ -48,7 +53,7 @@ public class MirrorManager : MonoBehaviour
         mirrors_.Remove(mirror);
     }
 
-    private void Update()
+    private void FixedUpdate()
     {    
         for (int i=0; i<mirrors_.Count; i++)
         {
@@ -62,10 +67,8 @@ public class MirrorManager : MonoBehaviour
             // player-main movement
             MoveInMirror( h, v, mirror.p_rb_ );
 
-            // player-main speed
-            float p_main_velocity = new Vector3(( mirror.p_.transform.position - mirror.last_pos_main_).x / Time.deltaTime ,
-                                                ( mirror.p_.transform.position - mirror.last_pos_main_).y / Time.deltaTime ,
-                                                ( mirror.p_.transform.position - mirror.last_pos_main_).z / Time.deltaTime ).magnitude;
+            // player-main velocity
+            p_main_velocity = VelocityCalc( mirror.p_.transform.position, mirror.last_pos_main_ );
             
             // change the movement orientation based on the mirror type
             if (mirror.mirror_direction_.z == 0)
@@ -80,55 +83,65 @@ public class MirrorManager : MonoBehaviour
             // player-ins movement
             MoveInMirror( h, v, mirror.p_ins_rb_ );
 
-            // player-ins speed
-            float p_ins_velocity = new Vector3 (( mirror.p_ins_.transform.position - mirror.last_pos_ins_).x / Time.deltaTime , 
-                                                 (mirror.p_ins_.transform.position - mirror.last_pos_ins_).y / Time.deltaTime ,
-                                                ( mirror.p_ins_.transform.position - mirror.last_pos_ins_).z / Time.deltaTime ).magnitude;
-
-
-            // Syncing movement speed //////////////////////////////////////////////
-            if (p_main_velocity * 0.9f > p_ins_velocity)
+            // set array size
+            Array.Resize<float>( ref p_ins_velocity, mirrors_.Count);
+            // player-ins velocity
+            p_ins_velocity[i] = VelocityCalc( mirrors_[i].p_ins_.transform.position , mirrors_[i].last_pos_ins_ );
+            
+            // find slowest member
+            minIndex = Array.IndexOf(p_ins_velocity, p_ins_velocity.Min());
+            Debug.Log(minIndex);
+            
+            // Repositioning base on slowest member
+            // if player-main was slowest:
+            if (p_main_velocity < p_ins_velocity[minIndex] * 0.9)
             {
-                // min_velocity = p_ins_velocity;
-                mirror.p_.transform.position = Obj_Refl_Pos(-mirror.mirror_direction_, mirror.p_ins_);
+                mirrors_[i].p_ins_.transform.position = Obj_Refl_Pos(mirrors_[i].mirror_direction_, mirror.p_.transform.position);
             }
-            else if (p_ins_velocity * 0.9f > p_main_velocity)
+
+            // if one of player-ins was slowest
+            else if (p_ins_velocity[minIndex] < p_main_velocity * 0.9)
             {
-                // p_ins_velocity = min_velocity;
-                mirror.p_ins_.transform.position = Obj_Refl_Pos(mirror.mirror_direction_, mirror.p_);
+                if (i != minIndex)
+                {
+                    mirror.p_.transform.position = Obj_Refl_Pos(-mirrors_[minIndex].mirror_direction_, mirrors_[minIndex].p_ins_.transform.position);
+                    mirrors_[i].p_ins_.transform.position = Obj_Refl_Pos(mirrors_[i].mirror_direction_, mirror.p_.transform.position);
+                                                            // Obj_Refl_Pos(-mirrors_[minIndex].mirror_direction_, mirrors_[minIndex].p_ins_.transform.position));
+                }
             }
+                  
 
             // set last-pos for player-main and player-ins (to calculate velocity)
-            mirror.last_pos_ins_ = mirror.p_ins_.transform.position;
+            mirrors_[i].last_pos_ins_ = mirrors_[i].p_ins_.transform.position;
             mirror.last_pos_main_ = mirror.p_.transform.position;
         }
     } 
 
-
+    // Object Reflection Position ////////////////////////////////////////////////////////////////////////////////////
     // return reletive position of an object, other side of the mirror
-    public static Vector3 Obj_Refl_Pos (Vector3 mirror_direction , GameObject p)
+    public static Vector3 Obj_Refl_Pos (Vector3 mirror_direction , Vector3 p)
 	{
 		RaycastHit hit;
 		Vector3 ray2mirror; // Vector from object to mirror
 		int layer_mask = LayerMask.GetMask("Mirror");
         Vector3 ReflPos = Vector3.zero;
-        Ray ray = new Ray(p.transform.position, -mirror_direction);
+        Ray ray = new Ray(p, -mirror_direction);
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, layer_mask))
         {
             if (hit.collider != null)
             {
-                ray2mirror = hit.point - p.transform.position;
-                ReflPos = new Vector3 (	p.transform.position.x + (ray2mirror.x*2) * Mathf.Abs(-mirror_direction.x),
-                                        p.transform.position.y,
-                                        p.transform.position.z + (ray2mirror.z*2) * Mathf.Abs(-mirror_direction.z));
+                ray2mirror = hit.point - p;
+                ReflPos = new Vector3 (	p.x + (ray2mirror.x*2) * Mathf.Abs(-mirror_direction.x),
+                                        p.y,
+                                        p.z + (ray2mirror.z*2) * Mathf.Abs(-mirror_direction.z));
             }
         }
 
         return ReflPos;
 	}
 
-
+    // MoveInMirror ////////////////////////////////////////////////////////////////////////////////////////////////
     void MoveInMirror( float h, float v, Rigidbody rb )
     {
         Vector3 movement = new Vector3(h, 0, v);
@@ -141,5 +154,16 @@ public class MirrorManager : MonoBehaviour
 		{
 			rb.gameObject.transform.rotation = Quaternion.LookRotation(movement);
 		}
+    }
+
+    // Velocity Calculator ///////////////////////////////////////////////////////////////////////////////////////////
+    private float VelocityCalc(Vector3 currentPosition, Vector3 LastPosition)
+    {
+        Vector3 moveVector;
+        moveVector = new Vector3 ((currentPosition - LastPosition).x / Time.deltaTime, 
+                                  (currentPosition - LastPosition).y / Time.deltaTime,
+                                  (currentPosition - LastPosition).z / Time.deltaTime );
+
+        return moveVector.magnitude;
     }
 }
